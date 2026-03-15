@@ -49,11 +49,13 @@ const API_KEY = process.env.REACT_APP_CLAUDE_API_KEY;
 const HAS_API_KEY = API_KEY && API_KEY !== "your-api-key-here" && API_KEY.length > 10;
 
 // ─── Hardcoded demo data (works without API key) ────────────────────────────
-const DEMO_EXAMPLE = {
-  book: "Harry Potter and the Philosopher's Stone — J.K. Rowling",
-  character: "Hagrid",
-  page: "155",
-  data: {
+// Two complete demo flows for the class presentation:
+//   1. Hagrid — Harry Potter and the Philosopher's Stone, page 155
+//   2. Sméagol — The Two Towers, page 250
+// ─────────────────────────────────────────────────────────────────────────────
+
+const DEMO_CHARACTERS = {
+  hagrid: {
     name: "Rubeus Hagrid",
     aliases: ["Hagrid", "Keeper of Keys and Grounds at Hogwarts"],
     bio: "Hagrid is the enormous, warm-hearted Keeper of Keys and Grounds at Hogwarts School of Witchcraft and Wizardry. He was the one who delivered Harry's Hogwarts acceptance letter and introduced him to the wizarding world, taking him to Diagon Alley to buy his school supplies. He is fiercely loyal to Dumbledore and has a well-known soft spot for dangerous magical creatures.",
@@ -67,31 +69,44 @@ const DEMO_EXAMPLE = {
       "Owns a boarhound named Fang"
     ],
     status: "alive",
-    imagePrompt: "A towering giant of a man in his 50s or 60s, standing nearly twelve feet tall with an enormous barrel-shaped body. Wild, long bushy black hair streaked with grey and a thick tangled black beard covering most of his weathered, ruddy face. Small dark eyes that are warm and kind. Wearing a heavy brown moleskin overcoat with many bulging pockets over rough clothing. Massive hands like dustbin lids. Holding a pink umbrella. Standing in front of a small wooden hut with smoke coming from the chimney. Painterly fantasy storybook illustration style, warm golden lighting."
-  }
+    imagePrompt: "A towering giant of a man in his 50s or 60s, standing nearly twelve feet tall with an enormous barrel-shaped body. Wild, long bushy black hair streaked with grey and a thick tangled black beard covering most of his weathered, ruddy face. Small dark eyes that are warm and kind. Wearing a heavy brown moleskin overcoat with many bulging pockets over rough clothing. Massive hands like dustbin lids. Holding a pink umbrella. Painterly fantasy storybook illustration style, warm golden lighting."
+  },
+  smeagol: {
+    name: "Sméagol / Gollum",
+    aliases: ["Gollum", "Sméagol", "Slinker", "Stinker", "My Precious"],
+    bio: "Sméagol is a wretched, pitiable creature twisted by centuries of possessing the One Ring. Once a Hobbit-like river-dweller, he murdered his cousin Déagol to claim the Ring and was driven into the dark caves beneath the Misty Mountains. Now he follows the Fellowship — and later Frodo and Sam — consumed by his desperate desire to reclaim what he calls 'my Precious'. He speaks to himself in two voices: the fawning, eager-to-please Sméagol and the cruel, scheming Gollum.",
+    appearance: "A thin, wiry creature with pale, clammy skin that seems to glow faintly in the dark. He has enormous, luminous eyes that catch the light like lamps, a few wisps of thin hair clinging to his bony skull, and long, dexterous fingers. He is emaciated and stooped, moving on all fours with an unsettling spider-like agility. He wears nothing but a ragged loincloth.",
+    affiliation: "None — a solitary outcast",
+    lastEncounter: "Sméagol has been captured by Frodo and Sam after stalking them through the Emyn Muil. Frodo has shown him mercy and made him swear on the Precious to serve as their guide to Mordor. He is now leading them through the Dead Marshes, seemingly torn between genuine gratitude toward Frodo and his ceaseless hunger for the Ring.",
+    relationships: [
+      "Bound to serve Frodo Baggins as guide",
+      "Deeply distrusted by Samwise Gamgee",
+      "Formerly possessed the One Ring for nearly 500 years",
+      "Murdered his cousin Déagol for the Ring"
+    ],
+    status: "alive",
+    imagePrompt: "A gaunt, emaciated creature crouching on all fours, with enormous round pale eyes that glow in the dark. Thin, clammy greyish-white skin stretched over bony limbs. A few wisps of thin pale hair on a nearly bald skull. Long spindly fingers with sharp nails. An expression caught between pitiful sadness and cunning hunger. Dark cave background with faint reflections of water. Painterly fantasy storybook illustration style, cold blue-grey tones with a hint of golden light reflecting in his eyes."
+  },
 };
 
-const DEMO_PORTRAIT_SVG = `<svg viewBox="0 0 300 400" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <radialGradient id="bg" cx="50%" cy="40%"><stop offset="0%" stop-color="#4a6040"/><stop offset="100%" stop-color="#1a2a14"/></radialGradient>
-    <radialGradient id="skin" cx="45%" cy="35%"><stop offset="0%" stop-color="#d4a878"/><stop offset="100%" stop-color="#b8845c"/></radialGradient>
-  </defs>
-  <rect width="300" height="400" fill="url(#bg)"/>
-  <ellipse cx="150" cy="380" rx="120" ry="60" fill="#3a2820"/>
-  <rect x="70" y="160" width="160" height="200" rx="20" fill="#5a3e28"/>
-  <rect x="60" y="180" width="180" height="180" rx="10" fill="#6b4e34" opacity="0.8"/>
-  <circle cx="150" cy="140" r="70" fill="url(#skin)"/>
-  <ellipse cx="150" cy="120" rx="80" ry="60" fill="#2a1a10"/>
-  <ellipse cx="150" cy="180" rx="60" ry="40" fill="#2a1a10"/>
-  <circle cx="130" cy="135" r="8" fill="#1a1008"/>
-  <circle cx="170" cy="135" r="8" fill="#1a1008"/>
-  <circle cx="132" cy="133" r="3" fill="#f0e8d4"/>
-  <circle cx="172" cy="133" r="3" fill="#f0e8d4"/>
-  <ellipse cx="150" cy="148" rx="6" ry="4" fill="#c47848"/>
-  <path d="M130 160 Q150 172 170 160" stroke="#f0e8d4" stroke-width="2" fill="none"/>
-  <rect x="200" y="200" width="8" height="120" rx="4" fill="#d4a0b0" transform="rotate(10, 204, 260)"/>
-  <text x="150" y="390" text-anchor="middle" font-family="Georgia" font-size="11" fill="#d4b445" opacity="0.6">Demo Portrait</text>
-</svg>`;
+const DEMO_PORTRAITS = {
+  hagrid: "https://raw.githubusercontent.com/julianalexgo/booklens/refs/heads/main/DemoImages/ChatGPT%20Image%20Mar%2015%2C%202026%2C%2008_09_51%20AM.png",
+  smeagol: "https://raw.githubusercontent.com/julianalexgo/booklens/refs/heads/main/DemoImages/ChatGPT%20Image%20Mar%2015%2C%202026%2C%2008_16_28%20AM.png",
+  gollum: "https://raw.githubusercontent.com/julianalexgo/booklens/refs/heads/main/DemoImages/ChatGPT%20Image%20Mar%2015%2C%202026%2C%2008_16_28%20AM.png",
+};
+
+const DEMO_RECOMMENDATIONS = {
+  hagrid: [
+    { title: "The Hobbit", author: "J.R.R. Tolkien", year: 1937, reason: "Features Gandalf — a similarly warm, mysterious, and powerful mentor figure who guides a reluctant hero on an epic quest." },
+    { title: "A Wizard of Earthsea", author: "Ursula K. Le Guin", year: 1968, reason: "Ogion the Silent shares Hagrid's gentle wisdom and deep connection to the natural world, mentoring a young wizard finding his power." },
+    { title: "Guards! Guards!", author: "Terry Pratchett", year: 1989, reason: "Captain Vimes has Hagrid's big heart and fierce loyalty, protecting his city with the same stubborn devotion Hagrid shows to Dumbledore and Harry." },
+  ],
+  smeagol: [
+    { title: "Frankenstein", author: "Mary Shelley", year: 1818, reason: "Shelley's creature shares Sméagol's tragic arc — a being driven to darkness by isolation and rejection, yet capable of moments of surprising tenderness and longing for connection." },
+    { title: "The Strange Case of Dr Jekyll and Mr Hyde", author: "Robert Louis Stevenson", year: 1886, reason: "The duality of Jekyll and Hyde mirrors Sméagol and Gollum perfectly — two identities wrestling for control of one body, one clinging to goodness and the other consumed by obsession." },
+    { title: "Wuthering Heights", author: "Emily Brontë", year: 1847, reason: "Heathcliff's all-consuming obsession with Catherine echoes the way the Ring warps Sméagol's love into possession, transforming devotion into something destructive." },
+  ],
+};
 
 // ─── Claude API caller ──────────────────────────────────────────────────────
 async function callClaude(systemPrompt, userPrompt) {
@@ -122,29 +137,31 @@ async function callClaude(systemPrompt, userPrompt) {
   return data.content.filter((b) => b.type === "text").map((b) => b.text).join("\n");
 }
 
-// ─── Check if a search matches the hardcoded demo ───────────────────────────
-function isDemoMatch(book, character, page) {
+// ─── Match a search to a demo character ─────────────────────────────────────
+function getDemoCharacter(book, character) {
   const b = book.toLowerCase();
   const c = character.toLowerCase();
-  return (
-    (b.includes("philosopher") || b.includes("sorcerer") || b.includes("harry potter")) &&
-    c.includes("hagrid") &&
-    page === "155"
-  );
+  if (c.includes("hagrid") && (b.includes("harry potter") || b.includes("philosopher") || b.includes("sorcerer"))) {
+    return "hagrid";
+  }
+  if ((c.includes("smeagol") || c.includes("sméagol") || c.includes("gollum")) && (b.includes("two towers") || b.includes("lord of the rings") || b.includes("tolkien"))) {
+    return "smeagol";
+  }
+  return null;
 }
 
 // ─── Generate character data (with demo fallback) ───────────────────────────
 async function generateCharacterData(book, character, page) {
-  // Check if this matches our hardcoded demo
-  if (!HAS_API_KEY && isDemoMatch(book, character, page)) {
-    // Simulate a brief loading delay for realism
+  // Check if this matches a hardcoded demo character
+  const demoKey = getDemoCharacter(book, character);
+  if (!HAS_API_KEY && demoKey) {
     await new Promise((r) => setTimeout(r, 2000));
-    return DEMO_EXAMPLE.data;
+    return DEMO_CHARACTERS[demoKey];
   }
 
   if (!HAS_API_KEY) {
     throw new Error(
-      'No API key configured. To try the demo, search for "Hagrid" in "Harry Potter and the Philosopher\'s Stone" at page 155. Or add your API key to the .env file for live lookups.'
+      'No API key configured. Try the demo:\n• "Hagrid" in "Harry Potter and the Philosopher\'s Stone" (page 155)\n• "Smeagol" in "The Two Towers" (page 250)\nOr add your API key to the .env file for live lookups.'
     );
   }
 
@@ -167,13 +184,29 @@ Return ONLY valid JSON (no markdown, no explanation) in this exact format:
   return parseClaudeJSON(text);
 }
 
-// ─── Generate portrait SVG (with demo fallback) ─────────────────────────────
-async function generatePortrait(imagePrompt) {
-  // If no API key, return the hardcoded demo SVG portrait
+// ─── Generate portrait (with demo fallback) ─────────────────────────────────
+async function generatePortrait(imagePrompt, characterName) {
+  // Check for a demo portrait image URL
+  if (characterName) {
+    const name = characterName.toLowerCase();
+    for (const [key, url] of Object.entries(DEMO_PORTRAITS)) {
+      if (name.includes(key)) {
+        await new Promise((r) => setTimeout(r, 1000));
+        // Try to fetch and convert to blob URL (avoids CSP issues)
+        try {
+          const resp = await fetch(url);
+          if (resp.ok) {
+            const blob = await resp.blob();
+            return URL.createObjectURL(blob);
+          }
+        } catch { /* fall through */ }
+        return url;
+      }
+    }
+  }
+
   if (!HAS_API_KEY) {
-    await new Promise((r) => setTimeout(r, 1500));
-    const blob = new Blob([DEMO_PORTRAIT_SVG], { type: "image/svg+xml" });
-    return URL.createObjectURL(blob);
+    throw new Error("No portrait available without API key.");
   }
 
   const systemPrompt = `You are an expert SVG illustrator specialising in fantasy character portraits. You create beautiful, detailed SVG portraits in a painterly, storybook illustration style. Use rich gradients, layered shapes, and warm tones. The SVG should be 300x400 pixels. Return ONLY the raw SVG code, no markdown, no explanation, no backticks. Start directly with <svg>.`;
@@ -182,6 +215,15 @@ async function generatePortrait(imagePrompt) {
   const cleaned = svgText.replace(/```svg\n?/g, "").replace(/```xml\n?/g, "").replace(/```\n?/g, "").trim();
   const blob = new Blob([cleaned], { type: "image/svg+xml" });
   return URL.createObjectURL(blob);
+}
+
+// ─── Get recommendations (with demo fallback) ───────────────────────────────
+function getDemoRecommendations(characterName) {
+  if (!characterName) return null;
+  const name = characterName.toLowerCase();
+  if (name.includes("hagrid")) return DEMO_RECOMMENDATIONS.hagrid;
+  if (name.includes("smeagol") || name.includes("sméagol") || name.includes("gollum")) return DEMO_RECOMMENDATIONS.smeagol;
+  return null;
 }
 
 // ─── Stamp divider ──────────────────────────────────────────────────────────
@@ -240,7 +282,7 @@ export default function BookLens() {
   const handleGeneratePortrait = useCallback(async () => {
     if (!result?.imagePrompt) return;
     setPortraitLoading(true); setPortraitError(null);
-    try { const url = await generatePortrait(result.imagePrompt); setPortraitUrl(url); }
+    try { const url = await generatePortrait(result.imagePrompt, result.name); setPortraitUrl(url); }
     catch (e) { setPortraitError("Could not generate portrait. Try again."); }
     finally { setPortraitLoading(false); }
   }, [result]);
